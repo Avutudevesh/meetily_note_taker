@@ -425,7 +425,7 @@ export function useSummaryGeneration({
 
         if (!models || models.length === 0) {
           toast.error(
-            'No Ollama models found. Please download gemma3:1b from Model Settings.',
+            'No Ollama models found. Please download gemma4 from Model Settings.',
             { duration: 5000 }
           );
           return;

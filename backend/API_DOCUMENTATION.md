@@ -1,4 +1,4 @@
-# Meetily API Documentation
+# Cortex API Documentation
 
 ## Prerequisites
 

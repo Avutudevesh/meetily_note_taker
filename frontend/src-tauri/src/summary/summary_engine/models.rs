@@ -28,17 +28,17 @@ pub struct SamplingParams {
 /// Definition of a built-in AI model with all metadata
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelDef {
-    /// Model name in format "family:variant" (e.g., "gemma3:1b")
+    /// Model name in format "family:variant" (e.g., "gemma4:e2b")
     /// This is what's stored in database as model field when provider="builtin-ai"
     pub name: String,
 
-    /// Display name for UI (e.g., "Gemma 3 1B (Fast)")
+    /// Display name for UI (e.g., "Gemma 4 E2B (Fast)")
     pub display_name: String,
 
-    /// GGUF filename on disk (e.g., "gemma-3-1b-it-q4_0.gguf")
+    /// GGUF filename on disk (e.g., "gemma-4-E2B-it-Q4_K_M.gguf")
     pub gguf_file: String,
 
-    /// Template name for prompt formatting (e.g., "gemma3")
+    /// Template name for prompt formatting (e.g., "gemma4")
     pub template: String,
 
     /// Download URL (HuggingFace or other source)
@@ -65,32 +65,15 @@ pub struct ModelDef {
 /// Add new models here - the system will automatically detect and manage them
 pub fn get_available_models() -> Vec<ModelDef> {
     vec![
-        // Gemma 3 1B - Fast tier
+        // Gemma 4 E2B - Fast tier
         ModelDef {
-            name: "gemma3:1b".to_string(),
-            display_name: "Gemma 3 1B (Fast)".to_string(),
-            gguf_file: "gemma-3-1b-it-Q8_0.gguf".to_string(),
-            template: "gemma3".to_string(),
-            download_url: "https://meetily.towardsgeneralintelligence.com/models/gemma-3-1b-it-Q8_0.gguf".to_string(),
-            size_mb: 1019,
-            context_size: 32768, 
-            layer_count: 26,     
-            sampling: SamplingParams {
-                temperature: 1.0,
-                top_k: 64,
-                top_p: 0.95,
-                stop_tokens: vec!["<end_of_turn>".to_string()],
-            },
-            description: "Fastest model. Runs on any hardware with ~1GB RAM. Good for quick summaries.".to_string(),
-        },
-        ModelDef {
-            name: "gemma3:4b".to_string(),
-            display_name: "Gemma 3 4B (Balanced)".to_string(),
-            gguf_file: "gemma-3-4b-it-Q4_K_M.gguf".to_string(),
-            template: "gemma3".to_string(),
-            download_url: "https://meetily.towardsgeneralintelligence.com/models/gemma-3-4b-it-Q4_K_M.gguf".to_string(),
-            size_mb: 2374,
-            context_size: 32768, // Supports 128k, but 32k is good for local·
+            name: "gemma4:e2b".to_string(),
+            display_name: "Gemma 4 E2B (Fast)".to_string(),
+            gguf_file: "gemma-4-E2B-it-Q4_K_M.gguf".to_string(),
+            template: "gemma4".to_string(),
+            download_url: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf".to_string(),
+            size_mb: 3185,
+            context_size: 131072,
             layer_count: 35,
             sampling: SamplingParams {
                 temperature: 1.0,
@@ -98,7 +81,24 @@ pub fn get_available_models() -> Vec<ModelDef> {
                 top_p: 0.95,
                 stop_tokens: vec!["<end_of_turn>".to_string()],
             },
-            description: "Balanced model. Great quality/speed trade-off. Requires ~3.5GB RAM.".to_string(),
+            description: "Fast model. Runs on any modern hardware with ~4GB RAM. Great quality for summaries.".to_string(),
+        },
+        ModelDef {
+            name: "gemma4:e4b".to_string(),
+            display_name: "Gemma 4 E4B (Balanced)".to_string(),
+            gguf_file: "gemma-4-E4B-it-Q4_K_M.gguf".to_string(),
+            template: "gemma4".to_string(),
+            download_url: "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf".to_string(),
+            size_mb: 5100,
+            context_size: 131072,
+            layer_count: 42,
+            sampling: SamplingParams {
+                temperature: 1.0,
+                top_k: 64,
+                top_p: 0.95,
+                stop_tokens: vec!["<end_of_turn>".to_string()],
+            },
+            description: "Balanced model. Excellent quality/speed trade-off. Requires ~6GB RAM.".to_string(),
         },
     ]
 }
@@ -136,9 +136,9 @@ pub fn get_models_directory(app_data_dir: &PathBuf) -> PathBuf {
 // Prompt Templates (Model-Specific Formatting)
 // ============================================================================
 
-/// Gemma 3 chat template format
-pub const GEMMA3_TEMPLATE: &str = "\
-<start_of_turn>user
+/// Gemma 4 chat template format (native system role support)
+pub const GEMMA4_TEMPLATE: &str = "\
+<start_of_turn>system
 {system_prompt}<end_of_turn>
 <start_of_turn>user
 {user_prompt}<end_of_turn>
@@ -148,7 +148,7 @@ pub const GEMMA3_TEMPLATE: &str = "\
 /// Format a prompt using the specified template
 ///
 /// # Arguments
-/// * `template_name` - Template identifier (e.g., "gemma3", "chatml", "llama3")
+/// * `template_name` - Template identifier (e.g., "gemma4", "chatml", "llama3")
 /// * `system_prompt` - System message (instructions for the model)
 /// * `user_prompt` - User message (actual task/question)
 ///
@@ -160,7 +160,7 @@ pub fn format_prompt(
     user_prompt: &str,
 ) -> Result<String> {
     let template = match template_name {
-        "gemma3" => GEMMA3_TEMPLATE,
+        "gemma4" => GEMMA4_TEMPLATE,
         _ => return Err(anyhow!("Unknown template: {}", template_name)),
     };
 

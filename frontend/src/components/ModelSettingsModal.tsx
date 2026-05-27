@@ -698,7 +698,7 @@ export function ModelSettingsModal({
 
   // Function to download recommended model
   const downloadRecommendedModel = async () => {
-    const recommendedModel = 'gemma3:1b';
+    const recommendedModel = 'gemma4';
 
     // Prevent duplicate downloads (defense in depth - backend also checks)
     if (isDownloading(recommendedModel)) {
@@ -1257,35 +1257,35 @@ export function ModelSettingsModal({
                           variant="outline"
                           size="sm"
                           onClick={downloadRecommendedModel}
-                          disabled={isDownloading('gemma3:1b')}
+                          disabled={isDownloading('gemma4')}
                           className="w-full"
                         >
-                          {isDownloading('gemma3:1b') ? (
+                          {isDownloading('gemma4') ? (
                             <>
                               <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                              Downloading gemma3:1b...
+                              Downloading gemma4...
                             </>
                           ) : (
                             <>
                               <Download className="mr-2 h-4 w-4" />
-                              Download gemma3:1b (Recommended, ~800MB)
+                              Download gemma4 (Recommended)
                             </>
                           )}
                         </Button>
 
-                        {/* Show progress for gemma3:1b download */}
-                        {isDownloading('gemma3:1b') && getProgress('gemma3:1b') !== undefined && (
+                        {/* Show progress for gemma4 download */}
+                        {isDownloading('gemma4') && getProgress('gemma4') !== undefined && (
                           <div className="bg-white rounded-md border p-3">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-blue-600">Downloading gemma3:1b</span>
+                              <span className="text-sm font-medium text-blue-600">Downloading gemma4</span>
                               <span className="text-sm font-semibold text-blue-600">
-                                {Math.round(getProgress('gemma3:1b')!)}%
+                                {Math.round(getProgress('gemma4')!)}%
                               </span>
                             </div>
                             <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-300"
-                                style={{ width: `${getProgress('gemma3:1b')}%` }}
+                                style={{ width: `${getProgress('gemma4')}%` }}
                               />
                             </div>
                           </div>

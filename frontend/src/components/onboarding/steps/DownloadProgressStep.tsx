@@ -34,7 +34,7 @@ export function DownloadProgressStep() {
     completeOnboarding,
   } = useOnboarding();
 
-  const [recommendedModel, setRecommendedModel] = useState<string>('gemma3:1b');
+  const [recommendedModel, setRecommendedModel] = useState<string>('gemma4:e2b');
   const [isMac, setIsMac] = useState(false);
 
   const [parakeetState, setParakeetState] = useState<DownloadState>({
@@ -49,7 +49,7 @@ export function DownloadProgressStep() {
     status: summaryModelDownloaded ? 'completed' : 'waiting',
     progress: summaryModelDownloaded ? 100 : 0,
     downloadedMb: 0,
-    totalMb: 806, // 1b model size
+    totalMb: 3185, // e2b model size
     speedMbps: 0,
   });
 
@@ -153,7 +153,7 @@ export function DownloadProgressStep() {
         setSelectedSummaryModel(model);  // Update context
       } catch (error) {
         console.error('Failed to get recommended model:', error);
-        // Keep default gemma3:1b
+        // Keep default gemma4:e2b
       }
     };
 
@@ -247,7 +247,7 @@ export function DownloadProgressStep() {
       error?: string;
     }>('builtin-ai-download-progress', (event) => {
       const { model, progress, downloaded_mb, total_mb, speed_mbps, status, error } = event.payload;
-      if (model === selectedSummaryModel || model === 'gemma3:1b' || model === 'gemma3:4b') {
+      if (model === selectedSummaryModel || model === 'gemma4:e2b' || model === 'gemma4:e4b') {
         setGemmaState((prev) => ({
           ...prev,
           status: status === 'completed'
@@ -438,7 +438,7 @@ export function DownloadProgressStep() {
   return (
     <OnboardingContainer
       title="Getting things ready"
-      description="You can start using Meetily after downloading the Transcription Engine."
+      description="You can start using Cortex after downloading the Transcription Engine."
       step={3}
       totalSteps={isMac ? 4 : 3}
     >
@@ -456,7 +456,7 @@ export function DownloadProgressStep() {
             'Summary Engine',
             <Sparkles className="w-5 h-5 text-gray-600" />,
             gemmaState,
-            recommendedModel === 'gemma3:4b' ? '~2.5 GB' : '~806 MB'
+            recommendedModel === 'gemma4:e4b' ? '~5.0 GB' : '~3.1 GB'
           )}
         </div>
 

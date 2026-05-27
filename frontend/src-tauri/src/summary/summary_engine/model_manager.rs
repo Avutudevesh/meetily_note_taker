@@ -78,7 +78,7 @@ pub enum ModelStatus {
 /// Model information for UI display
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
-    /// Model name (e.g., "gemma3:1b")
+    /// Model name (e.g., "gemma4:e2b")
     pub name: String,
 
     /// Display name for UI
@@ -145,7 +145,7 @@ impl ModelManager {
                 dirs::data_dir()
                     .or_else(|| dirs::home_dir())
                     .ok_or_else(|| anyhow!("Could not find system data directory"))?
-                    .join("Meetily")
+                    .join("Cortex")
                     .join("models")
                     .join("summary")
             }
