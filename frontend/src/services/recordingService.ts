@@ -52,6 +52,15 @@ export class RecordingService {
   }
 
   /**
+   * Set meeting name for the current recording session
+   * Used to sync the user-edited title back to the backend during active recording
+   * @param name - The new meeting name/title
+   */
+  async setRecordingMeetingName(name: string): Promise<void> {
+    return invoke('set_recording_meeting_name', { name });
+  }
+
+  /**
    * Start recording (no device configuration)
    * @returns Promise<void>
    */

@@ -250,7 +250,7 @@ export function useRecordingStop(
 
         try {
           const responseData = await storageService.saveMeeting(
-            savedMeetingName || meetingTitle || 'New Meeting',  // PREFER savedMeetingName (backend source)
+            meetingTitle || savedMeetingName || 'New Meeting',  // PREFER user-edited title from context
             freshTranscripts,
             folderPath
           );

@@ -1050,6 +1050,20 @@ pub async fn get_recording_meeting_name() -> Result<Option<String>, String> {
     }
 }
 
+/// Set meeting name for the current recording session
+/// Used by the frontend to sync the user-edited title back to the backend during active recording
+#[tauri::command]
+pub async fn set_recording_meeting_name(name: String) -> Result<(), String> {
+    let mut manager_guard = RECORDING_MANAGER.lock().map_err(|e| e.to_string())?;
+
+    if let Some(manager) = manager_guard.as_mut() {
+        manager.set_meeting_name(Some(name));
+        Ok(())
+    } else {
+        Err("No active recording session".to_string())
+    }
+}
+
 // ============================================================================
 // DEVICE MONITORING COMMANDS (AirPods/Bluetooth disconnect/reconnect support)
 // ============================================================================

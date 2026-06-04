@@ -18,6 +18,7 @@ import { useRecordingStart } from '@/hooks/useRecordingStart';
 import { useRecordingStop } from '@/hooks/useRecordingStop';
 import { useTranscriptRecovery } from '@/hooks/useTranscriptRecovery';
 import { TranscriptRecovery } from '@/components/TranscriptRecovery';
+import { RecordingTitleBar } from '@/components/RecordingTitleBar';
 import { indexedDBService } from '@/services/indexedDBService';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -212,6 +213,10 @@ export default function Home() {
         onDelete={deleteRecoverableMeeting}
         onLoadPreview={loadMeetingTranscripts}
       />
+      {/* Recording Title Bar - editable title shown during recording */}
+      {recordingState.isRecording && (
+        <RecordingTitleBar />
+      )}
       <div className="flex flex-1 overflow-hidden">
         <TranscriptPanel
           isProcessingStop={isProcessingStop}
