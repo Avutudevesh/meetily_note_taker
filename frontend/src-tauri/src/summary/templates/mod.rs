@@ -31,9 +31,9 @@
 //! # Custom Templates
 //!
 //! Users can add custom templates to:
-//! - macOS: `~/Library/Application Support/Cortex/templates/`
-//! - Windows: `%APPDATA%\Cortex\templates\`
-//! - Linux: `~/.config/Cortex/templates/`
+//! - macOS: `~/Library/Application Support/Suno/templates/`
+//! - Windows: `%APPDATA%\Suno\templates\`
+//! - Linux: `~/.config/Suno/templates/`
 //!
 //! Custom templates must follow the JSON schema defined in `types::Template`.
 

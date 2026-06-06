@@ -1,4 +1,4 @@
-# Cortex API Documentation
+# Suno API Documentation
 
 ## Prerequisites
 

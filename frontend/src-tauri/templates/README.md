@@ -47,9 +47,9 @@ Each template JSON file follows this schema:
 
 Users can add custom templates to the application data directory:
 
-- **macOS**: `~/Library/Application Support/Cortex/templates/`
-- **Windows**: `%APPDATA%\Cortex\templates\`
-- **Linux**: `~/.config/Cortex/templates/`
+- **macOS**: `~/Library/Application Support/Suno/templates/`
+- **Windows**: `%APPDATA%\Suno\templates\`
+- **Linux**: `~/.config/Suno/templates/`
 
 Custom templates override built-in templates with the same filename.
 

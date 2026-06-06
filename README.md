@@ -24,7 +24,7 @@
     Get latest <a href="https://www.zackriya.com/cortex-subscribe/"><b>Product updates</b></a> <br><br>
     <a href="https://cortex.ai"><b>Website</b></a> •
     <a href="https://www.linkedin.com/company/106363062/"><b>LinkedIn</b></a> •
-    <a href="https://discord.gg/crRymMQBFH"><b>Cortex Discord</b></a> •
+    <a href="https://discord.gg/crRymMQBFH"><b>Suno Discord</b></a> •
     <a href="https://discord.com/invite/vCFJvN4BwJ"><b>Privacy-First AI</b></a> •
     <a href="https://www.reddit.com/r/cortex/"><b>Reddit</b></a>
 </p>
@@ -35,7 +35,7 @@ A privacy-first AI meeting assistant that captures, transcribes, and summarizes 
 </p>
 
 <p align="center">
-    <img src="docs/cortex_demo.gif" width="650" alt="Cortex Demo" />
+    <img src="docs/cortex_demo.gif" width="650" alt="Suno Demo" />
     <br>
     <a href="https://youtu.be/6FnhSC_eSz8">View full Demo Video</a>
 </p>
@@ -44,7 +44,7 @@ A privacy-first AI meeting assistant that captures, transcribes, and summarizes 
 
 ---
 
-> **🎉 New: Cortex PRO Available** - Looking for enhanced accuracy and advanced features? Check out our professional-grade solution with custom summary templates, advanced exports (PDF, DOCX), auto-meeting detection, built-in GDPR compliance, and many more. **This Community Edition remains forever free & open source**. [Learn more about PRO →](https://cortex.ai/pro/)
+> **🎉 New: Suno PRO Available** - Looking for enhanced accuracy and advanced features? Check out our professional-grade solution with custom summary templates, advanced exports (PDF, DOCX), auto-meeting detection, built-in GDPR compliance, and many more. **This Community Edition remains forever free & open source**. [Learn more about PRO →](https://suno.ai/pro/)
 
 ---
 
@@ -52,13 +52,13 @@ A privacy-first AI meeting assistant that captures, transcribes, and summarizes 
 <summary>Table of Contents</summary>
 
 - [Introduction](#introduction)
-- [Why Cortex?](#why-cortex)
+- [Why Suno?](#why-suno)
 - [Features](#features)
 - [Installation](#installation)
 - [Key Features in Action](#key-features-in-action)
 - [System Architecture](#system-architecture)
 - [For Developers](#for-developers)
-- [Cortex PRO](#cortex-pro)
+- [Suno PRO](#suno-pro)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -66,9 +66,9 @@ A privacy-first AI meeting assistant that captures, transcribes, and summarizes 
 
 ## Introduction
 
-Cortex is a privacy-first AI meeting assistant that runs entirely on your local machine. It captures your meetings, transcribes them in real-time, and generates summaries, all without sending any data to the cloud. This makes it the perfect solution for professionals and enterprises who need to maintain complete control over their sensitive information.
+Suno is a privacy-first AI meeting assistant that runs entirely on your local machine. It captures your meetings, transcribes them in real-time, and generates summaries, all without sending any data to the cloud. This makes it the perfect solution for professionals and enterprises who need to maintain complete control over their sensitive information.
 
-## Why Cortex?
+## Why Suno?
 
 While there are many meeting transcription tools available, this solution stands out by offering:
 
@@ -88,7 +88,7 @@ Meeting AI tools create significant privacy and compliance risks across all sect
 
 Whether you're a defense consultant, enterprise executive, legal professional, or healthcare provider, your sensitive discussions shouldn't live on servers you don't control. Cloud meeting tools promise convenience but deliver privacy nightmares with unclear data storage practices and potential unauthorized access.
 
-**Cortex solves this:** Complete data sovereignty on your infrastructure, zero vendor lock-in, and full control over your sensitive conversations.
+**Suno solves this:** Complete data sovereignty on your infrastructure, zero vendor lock-in, and full control over your sensitive conversations.
 
 </details>
 
@@ -98,7 +98,7 @@ Whether you're a defense consultant, enterprise executive, legal professional, o
 - **Real-time Transcription:** Get a live transcript of your meeting as it happens.
 - **AI-Powered Summaries:** Generate summaries of your meetings using powerful language models.
 - **Multi-Platform:** Works on macOS, Windows, and Linux.
-- **Open Source:** Cortex is open source and free to use.
+- **Open Source:** Suno is open source and free to use.
 - **Flexible AI Provider Support:** Choose from Ollama (local), Claude, Groq, OpenRouter, or use your own OpenAI-compatible endpoint.
 
 ## Installation
@@ -112,8 +112,8 @@ Whether you're a defense consultant, enterprise executive, legal professional, o
 
 1. Download `cortex_0.3.0_aarch64.dmg` from [Releases](https://github.com/Zackriya-Solutions/meeting-minutes/releases/latest)
 2. Open the downloaded `.dmg` file
-3. Drag **Cortex** to your Applications folder
-4. Open **Cortex** from Applications folder
+3. Drag **Suno** to your Applications folder
+4. Open **Suno** from Applications folder
 
 ### 🐧 **Linux**
 
@@ -138,7 +138,7 @@ pnpm install
 Transcribe meetings entirely on your device using **Whisper** or **Parakeet** models. No cloud required.
 
 <p align="center">
-    <img src="docs/home.png" width="650" style="border-radius: 10px;" alt="Cortex Demo" />
+    <img src="docs/home.png" width="650" style="border-radius: 10px;" alt="Suno Demo" />
 </p>
 
 ### 📥 Import & Enhance `Beta`
@@ -198,21 +198,21 @@ Automatically enabled at build time - no configuration needed.
 
 ## System Architecture
 
-Cortex is a single, self-contained application built with [Tauri](https://tauri.app/). It uses a Rust-based backend to handle all the core logic, and a Next.js frontend for the user interface.
+Suno is a single, self-contained application built with [Tauri](https://tauri.app/). It uses a Rust-based backend to handle all the core logic, and a Next.js frontend for the user interface.
 
 For more details, see the [Architecture documentation](docs/architecture.md).
 
 ## For Developers
 
-If you want to contribute to Cortex or build it from source, you'll need to have Rust and Node.js installed. For detailed build instructions, please see the [Building from Source guide](docs/BUILDING.md).
+If you want to contribute to Suno or build it from source, you'll need to have Rust and Node.js installed. For detailed build instructions, please see the [Building from Source guide](docs/BUILDING.md).
 
-## Cortex Pro
+## Suno Pro
 
 <p align="center">
     <img src="docs/pv2.1.png" width="650" style="border-radius: 10px;" alt="Upcoming version" />
 </p>
 
-**Cortex PRO** is a professional-grade solution with enhanced accuracy and advanced features for serious users and teams. Built on a different codebase with superior transcription models and enterprise-ready capabilities.
+**Suno PRO** is a professional-grade solution with enhanced accuracy and advanced features for serious users and teams. Built on a different codebase with superior transcription models and enterprise-ready capabilities.
 
 ### Key Advantages Over Community Edition:
 
@@ -234,11 +234,11 @@ If you want to contribute to Cortex or build it from source, you'll need to have
 - **Power users** who need advanced export formats and custom workflows
 - **Compliance-focused organizations** requiring GDPR readiness
 
-> **Note:** Cortex Community Edition remains **free & open source forever** with local transcription, AI summaries, and core features. PRO is a separate professional solution for users who need enhanced accuracy and advanced capabilities.
+> **Note:** Suno Community Edition remains **free & open source forever** with local transcription, AI summaries, and core features. PRO is a separate professional solution for users who need enhanced accuracy and advanced capabilities.
 
-For organizations needing 100+ users or managed compliance solutions, explore [Cortex Enterprise](https://cortex.ai/enterprise/).
+For organizations needing 100+ users or managed compliance solutions, explore [Suno Enterprise](https://suno.ai/enterprise/).
 
-**Learn more about pricing and features:** [https://cortex.ai/pro/](https://cortex.ai/pro/)
+**Learn more about pricing and features:** [https://suno.ai/pro/](https://suno.ai/pro/)
 
 ## Contributing
 

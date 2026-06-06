@@ -1,10 +1,10 @@
 # GPU Acceleration Guide
 
-Cortex supports GPU acceleration for transcription, which can significantly improve performance. This guide provides detailed information on how to set up and configure GPU acceleration for your system.
+Suno supports GPU acceleration for transcription, which can significantly improve performance. This guide provides detailed information on how to set up and configure GPU acceleration for your system.
 
 ## Supported Backends
 
-Cortex uses the `whisper-rs` library, which supports several GPU acceleration backends:
+Suno uses the `whisper-rs` library, which supports several GPU acceleration backends:
 
 *   **CUDA:** For NVIDIA GPUs.
 *   **Metal:** For Apple Silicon and modern Intel-based Macs.
