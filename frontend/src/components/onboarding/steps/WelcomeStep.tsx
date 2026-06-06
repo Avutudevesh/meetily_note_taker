@@ -24,7 +24,7 @@ export function WelcomeStep() {
 
   return (
     <OnboardingContainer
-      title="Welcome to Cortex"
+      title="Welcome to Suno"
       description="Record. Transcribe. Summarize. All on your device."
       step={1}
       hideProgress={true}

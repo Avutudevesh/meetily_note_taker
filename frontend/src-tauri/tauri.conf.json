@@ -91,8 +91,7 @@
         "createUpdaterArtifacts": true,
         "icon": [
             "icons/icon.png",
-            "icons/app_icon.icns",
-            "icons/app_icon.ico"
+            "icons/app_icon.icns"
         ],
         "resources": [
             "templates/*.json"

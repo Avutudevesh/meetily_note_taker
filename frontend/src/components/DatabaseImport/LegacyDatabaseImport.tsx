@@ -42,7 +42,7 @@ export function LegacyDatabaseImport({ isOpen, onComplete }: LegacyDatabaseImpor
         setDetectedPath(dbPath);
         setImportState('idle');
       } else {
-        setErrorMessage('No database found at selected location. Please select the Cortex folder, backend folder, or the database file directly.');
+        setErrorMessage('No database found at selected location. Please select the Suno folder, backend folder, or the database file directly.');
         setDetectedPath(null);
         setImportState('error');
         setTimeout(() => setImportState('idle'), 3000);
@@ -119,9 +119,9 @@ export function LegacyDatabaseImport({ isOpen, onComplete }: LegacyDatabaseImpor
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-[600px]" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="text-2xl">Welcome to Cortex!</DialogTitle>
+          <DialogTitle className="text-2xl">Welcome to Suno!</DialogTitle>
           <DialogDescription className="text-base pt-2">
-            Do you have data from a previous Cortex installation?
+            Do you have data from a previous Suno installation?
           </DialogDescription>
         </DialogHeader>
 
@@ -135,7 +135,7 @@ export function LegacyDatabaseImport({ isOpen, onComplete }: LegacyDatabaseImpor
           {/* Browse Section */}
           <div className="space-y-3">
             <p className="text-sm text-gray-600">
-              Select your previous Cortex folder, backend directory, or database file:
+              Select your previous Suno folder, backend directory, or database file:
             </p>
 
             <button

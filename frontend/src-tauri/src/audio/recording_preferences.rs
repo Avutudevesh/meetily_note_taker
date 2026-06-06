@@ -43,36 +43,36 @@ impl Default for RecordingPreferences {
 pub fn get_default_recordings_folder() -> PathBuf {
     #[cfg(target_os = "windows")]
     {
-        // Windows: %USERPROFILE%\Music\cortex-recordings
+        // Windows: %USERPROFILE%\Music\suno-recordings
         if let Some(music_dir) = dirs::audio_dir() {
-            music_dir.join("cortex-recordings")
+            music_dir.join("suno-recordings")
         } else {
             // Fallback to Documents if Music folder is not available
             dirs::document_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
-                .join("cortex-recordings")
+                .join("suno-recordings")
         }
     }
 
     #[cfg(target_os = "macos")]
     {
-        // macOS: ~/Movies/cortex-recordings
+        // macOS: ~/Movies/suno-recordings
         if let Some(movies_dir) = dirs::video_dir() {
-            movies_dir.join("cortex-recordings")
+            movies_dir.join("suno-recordings")
         } else {
             // Fallback to Documents if Movies folder is not available
             dirs::document_dir()
                 .unwrap_or_else(|| PathBuf::from("."))
-                .join("cortex-recordings")
+                .join("suno-recordings")
         }
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
-        // Linux/Others: ~/Documents/cortex-recordings
+        // Linux/Others: ~/Documents/suno-recordings
         dirs::document_dir()
             .unwrap_or_else(|| PathBuf::from("."))
-            .join("cortex-recordings")
+            .join("suno-recordings")
     }
 }
 
