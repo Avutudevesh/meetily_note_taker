@@ -1,5 +1,5 @@
 {
-    "name": "cortex",
+    "name": "suno",
     "version": "0.3.0",
     "private": true,
     "main": "electron/main.js",
