@@ -1,0 +1,40 @@
+{
+  "name": "Project Engagement Details",
+  "description": "Detailed engagement summary covering goals, deliverables, and stakeholder alignment.",
+  "sections": [
+    {
+      "title": "Engagement Overview",
+      "instruction": "Brief description of the project or engagement, its purpose and scope, as described across the meetings.",
+      "format": "paragraph"
+    },
+    {
+      "title": "Goals & Success Criteria",
+      "instruction": "What success looks like for this category. Include measurable outcomes if mentioned in the meetings.",
+      "format": "paragraph"
+    },
+    {
+      "title": "Key Stakeholders",
+      "instruction": "People, teams, or organizations involved and their roles as identified from the meetings.",
+      "format": "list",
+      "item_format": "| **Name/Team** | **Role** | **Involvement** |\n| --- | --- | --- |"
+    },
+    {
+      "title": "Deliverables",
+      "instruction": "Agreed outputs, milestones, or artifacts with owners and due dates as discussed.",
+      "format": "list",
+      "item_format": "| **Deliverable** | **Owner** | **Due Date** | **Status** |\n| --- | --- | --- | --- |"
+    },
+    {
+      "title": "Risks & Mitigations",
+      "instruction": "Known risks, their impact, and planned mitigations raised across the meetings.",
+      "format": "list",
+      "item_format": "| **Risk** | **Impact** | **Mitigation** | **Owner** |\n| --- | --- | --- | --- |"
+    },
+    {
+      "title": "Decisions Made",
+      "instruction": "Key decisions taken across the meetings for this category, with rationale and approximate date if available.",
+      "format": "list",
+      "item_format": "| **Decision** | **Rationale** | **Date** |\n| --- | --- | --- |"
+    }
+  ]
+}

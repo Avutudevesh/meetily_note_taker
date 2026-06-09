@@ -640,6 +640,9 @@ pub fn run() {
             summary::api_list_templates,
             summary::api_get_template_details,
             summary::api_validate_template,
+            // Categorise & Summarise commands
+            summary::categorize::api_categorize_transcripts,
+            summary::categorize::api_generate_category_summaries,
             // Built-in AI commands
             summary::summary_engine::builtin_ai_list_models,
             summary::summary_engine::builtin_ai_get_model_info,

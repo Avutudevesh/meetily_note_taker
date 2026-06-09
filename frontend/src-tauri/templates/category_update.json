@@ -1,0 +1,33 @@
+{
+  "name": "Category Update",
+  "description": "Progress and status update summary for a specific category of work.",
+  "sections": [
+    {
+      "title": "Summary",
+      "instruction": "One paragraph overview of the current status for this category based on the meeting transcripts.",
+      "format": "paragraph"
+    },
+    {
+      "title": "Progress",
+      "instruction": "What has been accomplished. Use bullet points, drawing only from what was discussed in the meetings.",
+      "format": "list"
+    },
+    {
+      "title": "In Progress",
+      "instruction": "What is currently being worked on as mentioned across the meetings.",
+      "format": "list"
+    },
+    {
+      "title": "Blockers",
+      "instruction": "Any impediments, risks, or dependencies blocking progress that were raised in the meetings.",
+      "format": "list",
+      "item_format": "| **Blocker** | **Owner** | **Impact** |\n| --- | --- | --- |"
+    },
+    {
+      "title": "Next Steps",
+      "instruction": "Planned actions for this category with owners and due dates as mentioned in the meetings.",
+      "format": "list",
+      "item_format": "| **Owner** | **Action** | **Due Date** |\n| --- | --- | --- |"
+    }
+  ]
+}

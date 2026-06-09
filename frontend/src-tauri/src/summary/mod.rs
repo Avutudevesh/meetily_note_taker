@@ -30,6 +30,7 @@ pub struct CustomOpenAIConfig {
     pub top_p: Option<f32>,
 }
 
+pub mod categorize;
 pub mod commands;
 pub mod llm_client;
 pub mod processor;

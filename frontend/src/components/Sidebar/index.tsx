@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload } from 'lucide-react';
+import { ChevronDown, ChevronRight, File, Settings, ChevronLeftCircle, ChevronRightCircle, Calendar, StickyNote, Home, Trash2, Mic, Square, Plus, Search, Pencil, NotebookPen, SearchIcon, X, Upload, LayoutList } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSidebar } from './SidebarProvider';
 import type { CurrentMeeting } from '@/components/Sidebar/SidebarProvider';
@@ -536,6 +536,20 @@ const Sidebar: React.FC = () => {
             </TooltipContent>
           </Tooltip>
 
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => router.push('/categorize')}
+                className={`p-2 rounded-lg transition-colors duration-150 ${pathname === '/categorize' ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
+              >
+                <LayoutList className="w-5 h-5 text-gray-600" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              <p>Categorise & Summarise</p>
+            </TooltipContent>
+          </Tooltip>
+
         </div>
       </TooltipProvider>
     );
@@ -795,6 +809,14 @@ const Sidebar: React.FC = () => {
                 <span>Import Audio</span>
               </button>
             )}
+
+            <button
+              onClick={() => router.push('/categorize')}
+              className={`w-full flex items-center justify-center px-3 py-1.5 mt-1 text-sm font-medium rounded-lg transition-colors shadow-sm ${pathname === '/categorize' ? 'bg-gray-300 text-gray-900' : 'text-gray-700 bg-gray-200 hover:bg-gray-300'}`}
+            >
+              <LayoutList className="w-4 h-4 mr-2" />
+              <span>Categorise & Summarise</span>
+            </button>
 
             <button
               onClick={() => router.push('/settings')}

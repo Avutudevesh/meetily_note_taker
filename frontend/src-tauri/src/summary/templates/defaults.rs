@@ -9,6 +9,13 @@ pub const DAILY_STANDUP: &str = include_str!("../../../templates/daily_standup.j
 /// Standard meeting notes template
 pub const STANDARD_MEETING: &str = include_str!("../../../templates/standard_meeting.json");
 
+/// Category progress/status update template
+pub const CATEGORY_UPDATE: &str = include_str!("../../../templates/category_update.json");
+
+/// Project engagement details template
+pub const PROJECT_ENGAGEMENT_DETAILS: &str =
+    include_str!("../../../templates/project_engagement_details.json");
+
 /// Registry of all built-in templates
 ///
 /// Maps template identifiers to their embedded JSON content
@@ -16,6 +23,8 @@ pub fn get_builtin_templates() -> Vec<(&'static str, &'static str)> {
     vec![
         ("daily_standup", DAILY_STANDUP),
         ("standard_meeting", STANDARD_MEETING),
+        ("category_update", CATEGORY_UPDATE),
+        ("project_engagement_details", PROJECT_ENGAGEMENT_DETAILS),
     ]
 }
 
@@ -30,13 +39,20 @@ pub fn get_builtin_template(id: &str) -> Option<&'static str> {
     match id {
         "daily_standup" => Some(DAILY_STANDUP),
         "standard_meeting" => Some(STANDARD_MEETING),
+        "category_update" => Some(CATEGORY_UPDATE),
+        "project_engagement_details" => Some(PROJECT_ENGAGEMENT_DETAILS),
         _ => None,
     }
 }
 
 /// List all built-in template identifiers
 pub fn list_builtin_template_ids() -> Vec<&'static str> {
-    vec!["daily_standup", "standard_meeting"]
+    vec![
+        "category_update",
+        "daily_standup",
+        "project_engagement_details",
+        "standard_meeting",
+    ]
 }
 
 #[cfg(test)]
