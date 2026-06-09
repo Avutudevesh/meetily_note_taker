@@ -20,18 +20,27 @@ export function useCategoryGeneration() {
     model: string,
     modelName: string,
     onComplete: () => void,
+    templateOverrides?: Record<number, string | null>,
   ) => {
-    const nonEmpty = assignments.filter(a => a.excerpts.length > 0);
+    const nonEmpty = assignments
+      .map((a, i) => ({ assignment: a, originalIndex: i }))
+      .filter(({ assignment }) => assignment.excerpts.length > 0);
     if (nonEmpty.length === 0) {
       toast.error('No excerpts to summarise — add content to at least one category');
       return;
     }
 
+    // Build parallel array of overrides aligned with nonEmpty assignments
+    const overrideList: (string | null)[] = nonEmpty.map(
+      ({ originalIndex }) => templateOverrides?.[originalIndex] ?? null
+    );
+
     setIsGenerating(true);
     toast.info('Generating summaries…');
     try {
       const response = await invoke<{ results: CategorySummaryResult[] }>('api_generate_category_summaries', {
-        assignments: nonEmpty,
+        assignments: nonEmpty.map(({ assignment }) => assignment),
+        templateOverrides: overrideList,
         model,
         modelName,
       });

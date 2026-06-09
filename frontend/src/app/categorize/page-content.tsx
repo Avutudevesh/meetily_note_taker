@@ -1,13 +1,24 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useSidebar } from '@/components/Sidebar/SidebarProvider';
 import { useConfig } from '@/contexts/ConfigContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCategorize } from '@/hooks/categorize/useCategorize';
 import { useCategoryGeneration } from '@/hooks/categorize/useCategoryGeneration';
-import { X, ChevronDown, ChevronUp, Loader2, Tags, ArrowLeft, Copy, Check } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Loader2, Tags, ArrowLeft, Copy, Check, MoreHorizontal, MoveRight, Trash2 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -30,6 +41,9 @@ export default function CategorizePageContent() {
     handleAddCategory,
     handleRemoveCategory,
     handleRemoveExcerpt,
+    handleMoveExcerpt,
+    templateOverrides,
+    handleSetTemplateOverride,
     handleClassify,
     goBackToSetup,
     goBackToReview,
@@ -41,6 +55,13 @@ export default function CategorizePageContent() {
   const [categoryInput, setCategoryInput] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set());
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [availableTemplates, setAvailableTemplates] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    invoke<Array<{ id: string; name: string; description: string }>>('api_list_templates')
+      .then(setAvailableTemplates)
+      .catch(() => {});
+  }, []);
 
   const handleCategoryInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && categoryInput.trim()) {
@@ -202,22 +223,55 @@ export default function CategorizePageContent() {
         <div className="flex flex-col gap-3 flex-1">
           {assignments.map((assignment, ci) => (
             <div key={ci} className="border border-gray-200 rounded-lg overflow-hidden">
-              <button
-                onClick={() => toggleExpanded(ci)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-800">{assignment.category}</span>
-                  <span className="text-xs text-gray-400">
+              <div className="flex items-center px-4 py-3 bg-gray-50 gap-3">
+                <button
+                  onClick={() => toggleExpanded(ci)}
+                  className="flex-1 flex items-center gap-3 text-left min-w-0"
+                >
+                  <span className="text-sm font-medium text-gray-800 truncate">{assignment.category}</span>
+                  <span className="text-xs text-gray-400 shrink-0">
                     {assignment.excerpts.length} excerpt{assignment.excerpts.length !== 1 ? 's' : ''}
                   </span>
-                </div>
-                {expandedCategories.has(ci) ? (
-                  <ChevronUp className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
-                )}
-              </button>
+                  {expandedCategories.has(ci) ? (
+                    <ChevronUp className="w-4 h-4 text-gray-400 shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-gray-400 shrink-0" />
+                  )}
+                </button>
+
+                {/* Per-category template selector */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="shrink-0 flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded px-2 py-1 bg-white hover:bg-gray-50 transition-colors"
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <span>{templateOverrides[ci]
+                        ? (availableTemplates.find(t => t.id === templateOverrides[ci])?.name ?? templateOverrides[ci])
+                        : 'AI chooses'}</span>
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      onClick={() => handleSetTemplateOverride(ci, null)}
+                      className={`text-sm ${templateOverrides[ci] == null ? 'font-medium text-blue-600' : ''}`}
+                    >
+                      AI chooses
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {availableTemplates.map(t => (
+                      <DropdownMenuItem
+                        key={t.id}
+                        onClick={() => handleSetTemplateOverride(ci, t.id)}
+                        className={`text-sm ${templateOverrides[ci] === t.id ? 'font-medium text-blue-600' : ''}`}
+                      >
+                        {t.name}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
               {expandedCategories.has(ci) && (
                 <div className="divide-y divide-gray-100">
@@ -233,13 +287,46 @@ export default function CategorizePageContent() {
                           </div>
                           <p className="text-sm text-gray-700">{excerpt.text}</p>
                         </div>
-                        <button
-                          onClick={() => handleRemoveExcerpt(ci, ei)}
-                          className="shrink-0 p-1 text-gray-300 hover:text-red-400 transition-colors"
-                          title="Remove excerpt"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              className="shrink-0 p-1 text-gray-300 hover:text-gray-600 transition-colors rounded"
+                              title="Move or remove"
+                            >
+                              <MoreHorizontal className="w-3.5 h-3.5" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuSub>
+                              <DropdownMenuSubTrigger className="gap-2">
+                                <MoveRight className="w-3.5 h-3.5" />
+                                Move to…
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent>
+                                {assignments
+                                  .map((a, idx) => ({ label: a.category, idx }))
+                                  .filter(({ idx }) => idx !== ci)
+                                  .map(({ label, idx }) => (
+                                    <DropdownMenuItem
+                                      key={idx}
+                                      onClick={() => handleMoveExcerpt(ci, ei, idx)}
+                                      className="text-sm"
+                                    >
+                                      {label}
+                                    </DropdownMenuItem>
+                                  ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleRemoveExcerpt(ci, ei)}
+                              className="gap-2 text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Remove entirely
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     ))
                   )}
@@ -253,7 +340,7 @@ export default function CategorizePageContent() {
           <Button
             onClick={() =>
               handleGenerate(assignments, modelConfig.provider, modelConfig.model, () =>
-                setStep('results')
+                setStep('results'), templateOverrides
               )
             }
             disabled={isGenerating}

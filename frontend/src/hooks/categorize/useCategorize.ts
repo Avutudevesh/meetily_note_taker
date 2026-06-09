@@ -24,6 +24,12 @@ export function useCategorize() {
   const [assignments, setAssignments] = useState<CategoryAssignment[]>([]);
   const [step, setStep] = useState<CategorizeStep>('setup');
   const [isClassifying, setIsClassifying] = useState(false);
+  // null = AI chooses, string = forced template id
+  const [templateOverrides, setTemplateOverrides] = useState<Record<number, string | null>>({});
+
+  const handleSetTemplateOverride = useCallback((categoryIndex: number, templateId: string | null) => {
+    setTemplateOverrides(prev => ({ ...prev, [categoryIndex]: templateId }));
+  }, []);
 
   const handleToggleMeeting = useCallback((meetingId: string) => {
     setSelectedMeetingIds(prev => {
@@ -61,6 +67,28 @@ export function useCategorize() {
       })
     );
   }, []);
+
+  const handleMoveExcerpt = useCallback(
+    (fromCategoryIndex: number, excerptIndex: number, toCategoryIndex: number) => {
+      setAssignments(prev => {
+        const excerpt = prev[fromCategoryIndex]?.excerpts[excerptIndex];
+        if (!excerpt) return prev;
+        return prev.map((assignment, ci) => {
+          if (ci === fromCategoryIndex) {
+            return {
+              ...assignment,
+              excerpts: assignment.excerpts.filter((_, ei) => ei !== excerptIndex),
+            };
+          }
+          if (ci === toCategoryIndex) {
+            return { ...assignment, excerpts: [...assignment.excerpts, excerpt] };
+          }
+          return assignment;
+        });
+      });
+    },
+    []
+  );
 
   const fetchTranscriptsForMeeting = useCallback(async (meetingId: string): Promise<Transcript[]> => {
     const firstPage = await invoke<{ transcripts: Transcript[]; total_count: number }>('api_get_meeting_transcripts', {
@@ -160,6 +188,9 @@ export function useCategorize() {
     handleAddCategory,
     handleRemoveCategory,
     handleRemoveExcerpt,
+    handleMoveExcerpt,
+    templateOverrides,
+    handleSetTemplateOverride,
     handleClassify,
     goBackToSetup,
     goBackToReview,

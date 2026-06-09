@@ -138,16 +138,27 @@ async fn resolve_provider_config<R: Runtime>(
 
 // ── JSON cleaning helper ──────────────────────────────────────────────────────
 
-/// Strip markdown fences from a JSON response the LLM may have wrapped
-fn extract_json_from_llm_output(raw: &str) -> &str {
+/// Extract the JSON object from LLM output, handling markdown fences and leading text.
+fn extract_json_from_llm_output(raw: &str) -> String {
     let trimmed = raw.trim();
-    const JSON_PREFIXES: &[&str] = &["```json\n", "```\n"];
-    for prefix in JSON_PREFIXES {
+
+    // 1. Try stripping markdown code fences (```json ... ``` or ``` ... ```)
+    for prefix in &["```json\n", "```json\r\n", "```\n", "```\r\n"] {
         if trimmed.starts_with(prefix) && trimmed.ends_with("```") {
-            return trimmed[prefix.len()..trimmed.len() - 3].trim();
+            return trimmed[prefix.len()..trimmed.len() - 3].trim().to_string();
         }
     }
-    trimmed
+
+    // 2. Try to find the outermost { ... } block in the response
+    if let Some(start) = trimmed.find('{') {
+        if let Some(end) = trimmed.rfind('}') {
+            if end > start {
+                return trimmed[start..=end].trim().to_string();
+            }
+        }
+    }
+
+    trimmed.to_string()
 }
 
 // ── Command 1: Categorise transcripts ────────────────────────────────────────
@@ -183,18 +194,44 @@ pub async fn api_categorize_transcripts<R: Runtime>(
     let pool = state.db_manager.pool();
     let config = resolve_provider_config(&app, pool, &model).await?;
 
-    // Build the combined transcript block, grouped by meeting
-    let combined = meeting_transcripts
-        .iter()
-        .map(|m| {
-            format!(
-                "=== Meeting: {} ===\n{}",
-                m.meeting_title,
-                m.formatted_text.trim()
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("\n\n");
+    // Build a numbered flat list of all segments across all meetings.
+    // The LLM returns only indices — no text echoed back — keeping the output small.
+    struct Segment {
+        meeting_title: String,
+        timestamp: String,
+        text: String,
+    }
+    let mut segments: Vec<Segment> = Vec::new();
+    let mut numbered_lines = String::new();
+
+    for m in &meeting_transcripts {
+        for line in m.formatted_text.trim().lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+            let idx = segments.len();
+            // Parse "[MM:SS] text" if possible, otherwise treat whole line as text
+            let (timestamp, text) = if line.starts_with('[') {
+                if let Some(close) = line.find(']') {
+                    (line[..=close].to_string(), line[close + 1..].trim().to_string())
+                } else {
+                    (String::new(), line.to_string())
+                }
+            } else {
+                (String::new(), line.to_string())
+            };
+            numbered_lines.push_str(&format!(
+                "{}: [{}] {}\n",
+                idx, m.meeting_title, line
+            ));
+            segments.push(Segment {
+                meeting_title: m.meeting_title.clone(),
+                timestamp,
+                text,
+            });
+        }
+    }
 
     let categories_list = categories
         .iter()
@@ -204,34 +241,29 @@ pub async fn api_categorize_transcripts<R: Runtime>(
         .join("\n");
 
     let system_prompt = format!(
-        r#"You are analysing meeting transcripts from multiple meetings. Your task is to extract and assign relevant excerpts to the user-defined categories below.
+        r#"You are classifying numbered transcript segments into categories.
 
 Categories:
 {categories_list}
 
-Instructions:
-- Read all the transcript content carefully.
-- For each category, extract the most relevant passages or discussion points.
-- Each excerpt should be a concise, self-contained quote or paraphrase from the transcript.
-- Include the meeting title and the timestamp (e.g. "[MM:SS]") for each excerpt.
-- A passage may appear under more than one category if it is relevant to both.
-- If no content is found for a category, return an empty array for that category.
-- Return ONLY valid JSON in the following format, with no additional text or markdown fences:
+You will receive a list of segments in the format:
+  INDEX: [MeetingName] [MM:SS] text
 
-{{
-  "CategoryName": [
-    {{"meeting": "Meeting Title", "timestamp": "[MM:SS]", "text": "excerpt text"}},
-    ...
-  ],
-  "AnotherCategory": [...]
-}}
+Rules:
+- Assign EVERY segment index to exactly one category.
+- Choose the most relevant category for each segment.
+- If a segment is ambiguous, assign it to the closest matching category.
+- Use the exact category names as provided.
+- Return ONLY valid JSON with no extra text or markdown fences:
 
-Use the exact category names as provided."#,
+{{"CategoryName": [0, 3, 7, ...], "AnotherCategory": [1, 2, 4, ...], ...}}
+
+Every index must appear in exactly one category array."#,
         categories_list = categories_list
     );
 
     let user_prompt = format!(
-        "Here are the meeting transcripts to analyse:\n\n{combined}"
+        "Classify ALL of the following segments:\n\n{numbered_lines}"
     );
 
     let client = reqwest::Client::new();
@@ -244,7 +276,7 @@ Use the exact category names as provided."#,
         &user_prompt,
         config.ollama_endpoint.as_deref(),
         config.custom_openai_endpoint.as_deref(),
-        config.max_tokens,
+        None,
         config.temperature,
         config.top_p,
         config.app_data_dir.as_ref(),
@@ -254,15 +286,23 @@ Use the exact category names as provided."#,
     .map_err(|e| format!("LLM call failed: {}", e))?;
 
     let json_str = extract_json_from_llm_output(&raw_response);
+    info!("Extracted JSON ({} chars): {:.500}", json_str.len(), json_str);
 
-    let parsed: serde_json::Value = serde_json::from_str(json_str)
-        .map_err(|e| format!("Failed to parse categorisation response as JSON: {}. Raw: {}", e, &raw_response[..raw_response.len().min(500)]))?;
+    let parsed: serde_json::Value = serde_json::from_str(&json_str).map_err(|e| {
+        let snippet = &raw_response[..raw_response.len().min(800)];
+        error!("JSON parse failed: {}. Raw response snippet: {}", e, snippet);
+        format!(
+            "Failed to parse categorisation response as JSON: {}. Raw (first 500 chars): {}",
+            e,
+            &raw_response[..raw_response.len().min(500)]
+        )
+    })?;
 
     let obj = parsed
         .as_object()
         .ok_or_else(|| "Expected a JSON object from the LLM".to_string())?;
 
-    // Build assignments preserving the user's category order
+    // Reconstruct CategoryAssignment from index arrays
     let mut assignments: Vec<CategoryAssignment> = categories
         .iter()
         .map(|cat| {
@@ -271,29 +311,16 @@ Use the exact category names as provided."#,
                 .and_then(|v| v.as_array())
                 .map(|arr| {
                     arr.iter()
-                        .filter_map(|item| {
-                            Some(AssignedExcerpt {
-                                meeting_title: item
-                                    .get("meeting")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                                timestamp: item
-                                    .get("timestamp")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                                text: item
-                                    .get("text")
-                                    .and_then(|v| v.as_str())
-                                    .unwrap_or("")
-                                    .to_string(),
-                            })
+                        .filter_map(|v| v.as_u64().map(|i| i as usize))
+                        .filter_map(|i| segments.get(i))
+                        .map(|s| AssignedExcerpt {
+                            meeting_title: s.meeting_title.clone(),
+                            timestamp: s.timestamp.clone(),
+                            text: s.text.clone(),
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-
             CategoryAssignment {
                 category: cat.clone(),
                 excerpts,
@@ -301,30 +328,18 @@ Use the exact category names as provided."#,
         })
         .collect();
 
-    // Also pick up any extra categories the LLM returned that weren't in the original list
+    // Pick up any extra categories the LLM returned
     for (key, val) in obj {
         if !categories.contains(key) {
             if let Some(arr) = val.as_array() {
                 let excerpts: Vec<AssignedExcerpt> = arr
                     .iter()
-                    .filter_map(|item| {
-                        Some(AssignedExcerpt {
-                            meeting_title: item
-                                .get("meeting")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string(),
-                            timestamp: item
-                                .get("timestamp")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string(),
-                            text: item
-                                .get("text")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or("")
-                                .to_string(),
-                        })
+                    .filter_map(|v| v.as_u64().map(|i| i as usize))
+                    .filter_map(|i| segments.get(i))
+                    .map(|s| AssignedExcerpt {
+                        meeting_title: s.meeting_title.clone(),
+                        timestamp: s.timestamp.clone(),
+                        text: s.text.clone(),
                     })
                     .collect();
                 if !excerpts.is_empty() {
@@ -338,8 +353,9 @@ Use the exact category names as provided."#,
     }
 
     info!(
-        "Categorisation complete: {} categories with assignments",
-        assignments.len()
+        "Categorisation complete: {} categories, {} total segments",
+        assignments.len(),
+        segments.len(),
     );
 
     Ok(CategorizeResponse { assignments })
@@ -357,6 +373,7 @@ pub async fn api_generate_category_summaries<R: Runtime>(
     app: AppHandle<R>,
     state: tauri::State<'_, AppState>,
     assignments: Vec<CategoryAssignment>,
+    template_overrides: Option<Vec<Option<String>>>,
     model: String,
     model_name: String,
 ) -> Result<CategorySummariesResponse, String> {
@@ -382,7 +399,7 @@ pub async fn api_generate_category_summaries<R: Runtime>(
     let client = reqwest::Client::new();
     let mut results: Vec<CategorySummaryResult> = Vec::new();
 
-    for assignment in &assignments {
+    for (idx, assignment) in assignments.iter().enumerate() {
         if assignment.excerpts.is_empty() {
             info!("Skipping category '{}' — no excerpts", assignment.category);
             continue;
@@ -394,6 +411,12 @@ pub async fn api_generate_category_summaries<R: Runtime>(
             assignment.excerpts.len()
         );
 
+        // Check if the user forced a specific template
+        let forced_template: Option<String> = template_overrides
+            .as_ref()
+            .and_then(|overrides| overrides.get(idx))
+            .and_then(|t| t.clone());
+
         // Build the transcript block for this category
         let transcript_block = assignment
             .excerpts
@@ -402,8 +425,30 @@ pub async fn api_generate_category_summaries<R: Runtime>(
             .collect::<Vec<_>>()
             .join("\n");
 
-        let system_prompt = format!(
-            r#"You are generating a structured summary for the category: "{category}".
+        let system_prompt = if let Some(ref template_id) = forced_template {
+            // User chose a specific template — load it and use it directly
+            let chosen_template = get_template(template_id)
+                .map_err(|e| format!("Failed to load template '{}': {}", template_id, e))?;
+            format!(
+                r#"You are generating a structured summary for the category: "{category}".
+
+Use the following template exactly. Fill every section using only information present in the provided excerpts.
+
+{instructions}
+
+Rules:
+- Use only information present in the provided excerpts.
+- Do not infer or add information that is not mentioned.
+- Complete every section.
+- Use markdown formatting as described in each section.
+- Do NOT output a TEMPLATE: line — output the filled-in markdown directly."#,
+                category = assignment.category,
+                instructions = chosen_template.to_section_instructions(),
+            )
+        } else {
+            // AI chooses between the two category-specific templates
+            format!(
+                r#"You are generating a structured summary for the category: "{category}".
 
 You must choose the most appropriate template based on the content:
 - Use `category_update` if the content is primarily about ongoing work, progress, status updates, blockers, or next steps.
@@ -427,10 +472,11 @@ Rules:
 - Do not infer or add information that is not mentioned.
 - Complete every section of your chosen template.
 - Use markdown formatting as described in each section."#,
-            category = assignment.category,
-            update_instructions = update_template.to_section_instructions(),
-            engagement_instructions = engagement_template.to_section_instructions(),
-        );
+                category = assignment.category,
+                update_instructions = update_template.to_section_instructions(),
+                engagement_instructions = engagement_template.to_section_instructions(),
+            )
+        };
 
         let user_prompt = format!(
             "Category: {category}\n\nTranscript excerpts:\n{transcript_block}",
@@ -471,9 +517,14 @@ Rules:
             }
         };
 
-        // Parse the TEMPLATE: <id> line then treat the rest as markdown
+        // Parse the TEMPLATE: <id> line then treat the rest as markdown.
+        // If the user forced a template, we know the answer already.
         let cleaned = clean_llm_markdown_output(&raw);
-        let (template_used, markdown) = parse_template_and_markdown(&cleaned);
+        let (template_used, markdown) = if let Some(ref id) = forced_template {
+            (id.clone(), cleaned)
+        } else {
+            parse_template_and_markdown(&cleaned)
+        };
 
         info!(
             "Category '{}' summary generated using template '{}'",
