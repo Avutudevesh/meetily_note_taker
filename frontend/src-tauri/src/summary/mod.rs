@@ -43,18 +43,18 @@ pub mod templates;
 
 // Re-export Tauri commands (with their generated __cmd__ and __tauri_command_name_ variants)
 pub use commands::{
-    __cmd__api_cancel_summary, __cmd__api_detect_transcript_summary_language,
+    __cmd__api_ask_question, __cmd__api_cancel_summary, __cmd__api_detect_transcript_summary_language,
     __cmd__api_get_meeting_detected_summary_language, __cmd__api_get_meeting_summary_language,
     __cmd__api_get_summary, __cmd__api_process_transcript,
     __cmd__api_save_meeting_detected_summary_language, __cmd__api_save_meeting_summary,
-    __cmd__api_save_meeting_summary_language, __tauri_command_name_api_cancel_summary,
+    __cmd__api_save_meeting_summary_language, __tauri_command_name_api_ask_question, __tauri_command_name_api_cancel_summary,
     __tauri_command_name_api_detect_transcript_summary_language,
     __tauri_command_name_api_get_meeting_detected_summary_language,
     __tauri_command_name_api_get_meeting_summary_language,
     __tauri_command_name_api_get_summary, __tauri_command_name_api_process_transcript,
     __tauri_command_name_api_save_meeting_detected_summary_language,
     __tauri_command_name_api_save_meeting_summary,
-    __tauri_command_name_api_save_meeting_summary_language, api_cancel_summary,
+    __tauri_command_name_api_save_meeting_summary_language, api_ask_question, api_cancel_summary,
     api_detect_transcript_summary_language, api_get_meeting_detected_summary_language,
     api_get_meeting_summary_language, api_get_summary, api_process_transcript,
     api_save_meeting_detected_summary_language, api_save_meeting_summary,

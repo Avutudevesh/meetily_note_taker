@@ -11,10 +11,14 @@ use crate::summary::language_detection::{
     detect_summary_language, SummaryLanguageDetection,
 };
 use crate::summary::service::SummaryService;
+use crate::database::repositories::setting::SettingsRepository;
+use crate::summary::llm_client::{generate_summary, LLMProvider};
+use crate::summary::CustomOpenAIConfig;
 use log::{error as log_error, info as log_info, warn as log_warn};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SummaryResponse {
@@ -441,4 +445,160 @@ pub async fn api_cancel_summary<R: Runtime>(
             "meeting_id": meeting_id,
         }))
     }
+}
+
+/// Answers a question about a meeting transcript using the configured LLM
+///
+/// When `all_meetings` is true, fetches transcripts from ALL meetings and
+/// asks the question across all of them. Otherwise queries only the specified meeting.
+#[tauri::command]
+pub async fn api_ask_question<R: Runtime>(
+    app: AppHandle<R>,
+    state: tauri::State<'_, AppState>,
+    meeting_id: String,
+    question: String,
+    all_meetings: Option<bool>,
+) -> Result<String, String> {
+    log_info!("api_ask_question called for meeting_id: {}, all_meetings: {:?}", meeting_id, all_meetings);
+
+    if question.trim().is_empty() {
+        return Err("Question cannot be empty".to_string());
+    }
+
+    let pool = state.db_manager.pool();
+    let ask_all = all_meetings.unwrap_or(false);
+
+    let transcript_text: String = if ask_all {
+        // Fetch transcripts from all meetings
+        let meetings = MeetingsRepository::get_meetings(pool)
+            .await
+            .map_err(|e| format!("Failed to list meetings: {}", e))?;
+
+        if meetings.is_empty() {
+            return Err("No meetings found".to_string());
+        }
+
+        let mut parts: Vec<String> = Vec::new();
+        for m in &meetings {
+            if let Ok(Some(details)) = MeetingsRepository::get_meeting(pool, &m.id).await {
+                if !details.transcripts.is_empty() {
+                    let transcript: String = details
+                        .transcripts
+                        .iter()
+                        .map(|t| t.text.as_str())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    parts.push(format!("--- MEETING: {} ---\n{}", details.title, transcript));
+                }
+            }
+        }
+
+        if parts.is_empty() {
+            return Err("No transcript content found in any meeting".to_string());
+        }
+
+        let combined = parts.join("\n\n");
+
+        // Cap at ~100k chars to avoid excessively large prompts
+        if combined.len() > 100_000 {
+            format!("{}...\n\n[Transcript truncated at 100,000 characters]",
+                &combined[..100_000])
+        } else {
+            combined
+        }
+    } else {
+        // Fetch single meeting with all transcripts
+        let meeting = MeetingsRepository::get_meeting(pool, &meeting_id)
+            .await
+            .map_err(|e| format!("Failed to fetch meeting: {}", e))?
+            .ok_or_else(|| "Meeting not found".to_string())?;
+
+        let text: String = meeting
+            .transcripts
+            .iter()
+            .map(|t| t.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        if text.trim().is_empty() {
+            return Err("No transcript content found for this meeting".to_string());
+        }
+        text
+    };
+
+    // Get model config from DB
+    let setting = SettingsRepository::get_model_config(pool)
+        .await
+        .map_err(|e| format!("Failed to get model config: {}", e))?
+        .ok_or_else(|| "No model configured. Please configure a model in Settings first.".to_string())?;
+
+    let provider = LLMProvider::from_str(&setting.provider)
+        .map_err(|e| format!("Invalid provider configured: {}", e))?;
+
+    let api_key = SettingsRepository::get_api_key(pool, &setting.provider)
+        .await
+        .map_err(|e| format!("Failed to get API key: {}", e))?
+        .unwrap_or_default();
+
+    // Parse custom OpenAI endpoint if applicable
+    let custom_openai_endpoint = if provider == LLMProvider::CustomOpenAI {
+        if let Some(json_str) = &setting.custom_openai_config {
+            let config: CustomOpenAIConfig = serde_json::from_str(json_str)
+                .map_err(|e| format!("Invalid Custom OpenAI config: {}", e))?;
+            Some(config.endpoint)
+        } else {
+            return Err(
+                "Custom OpenAI endpoint not configured. Please configure it in Settings."
+                    .to_string(),
+            );
+        }
+    } else {
+        None
+    };
+
+    // Get app data dir for BuiltInAI provider
+    let app_data_dir = if provider == LLMProvider::BuiltInAI {
+        app.path().app_data_dir().ok()
+    } else {
+        None
+    };
+
+    let system_prompt = if ask_all {
+        "You are a helpful assistant answering questions about meeting transcripts. The transcripts below are from multiple meetings, each marked with a \"--- MEETING: ... ---\" header. Use the transcripts to answer accurately and concisely, mentioning which meeting(s) the information comes from. If the answer cannot be found in the transcripts, say so clearly."
+    } else {
+        "You are a helpful assistant answering questions about a meeting transcript. Use the transcript provided to answer accurately and concisely. If the answer cannot be found in the transcript, say so clearly."
+    };
+
+    let user_prompt = if ask_all {
+        format!(
+            "TRANSCRIPTS:\n{}\n\nQUESTION:\n{}\n\nAnswer the question based only on the transcripts above.",
+            transcript_text, question
+        )
+    } else {
+        format!(
+            "TRANSCRIPT:\n{}\n\nQUESTION:\n{}\n\nAnswer the question based only on the transcript above.",
+            transcript_text, question
+        )
+    };
+
+    let client = Client::new();
+    let answer = generate_summary(
+        &client,
+        &provider,
+        &setting.model,
+        &api_key,
+        system_prompt,
+        &user_prompt,
+        setting.ollama_endpoint.as_deref(),
+        custom_openai_endpoint.as_deref(),
+        Some(2048_u32),
+        Some(0.7_f32),
+        None,
+        app_data_dir.as_ref(),
+        None,
+    )
+    .await?;
+
+    log_info!("api_ask_question completed for meeting_id: {}, all_meetings: {}", meeting_id, ask_all);
+    Ok(answer)
 }
