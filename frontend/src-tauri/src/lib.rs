@@ -512,19 +512,19 @@ pub fn run() {
                 log::warn!("Failed to resolve resource directory for templates");
             }
 
-            // Start Google Calendar poller if tokens already exist
+            // Start Google Calendar poller if an ICS URL is already configured
             let app_for_calendar = _app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 if let Some(app_state) = app_for_calendar.try_state::<crate::state::AppState>() {
                     let pool = app_state.db_manager.pool();
-                    match calendar::repository::get_tokens(pool).await {
+                    match calendar::repository::get_ics_url(pool).await {
                         Ok(Some(_)) => {
                             let cal_state = app_for_calendar.state::<Arc<CalendarState>>();
                             calendar::poller::spawn_poller(app_for_calendar.clone(), cal_state.inner().clone());
-                            log::info!("[Calendar] Poller started on app startup");
+                            log::info!("[Calendar] Poller started on app startup (ICS URL found)");
                         }
-                        Ok(None) => log::info!("[Calendar] No tokens found, poller not started"),
-                        Err(e) => log::warn!("[Calendar] Failed to check tokens on startup: {}", e),
+                        Ok(None) => log::info!("[Calendar] No ICS URL configured, poller not started"),
+                        Err(e) => log::warn!("[Calendar] Failed to check ICS URL on startup: {}", e),
                     }
                 }
             });
@@ -774,10 +774,10 @@ pub fn run() {
             audio::import::cancel_import_command,
             audio::import::is_import_in_progress_command,
             // Google Calendar integration commands
-            calendar::commands::calendar_save_credentials,
-            calendar::commands::calendar_connect,
-            calendar::commands::calendar_disconnect,
+            calendar::commands::calendar_save_ics_url,
             calendar::commands::calendar_get_status,
+            calendar::commands::calendar_remove_ics_url,
+            calendar::commands::calendar_test_ics_url,
             calendar::commands::calendar_set_reminder_minutes,
             calendar::commands::calendar_get_reminder_minutes,
         ])
