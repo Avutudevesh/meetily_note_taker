@@ -13,11 +13,12 @@ export default function AiModePageContent() {
   const { messages, isLoading, error, askQuestion, clearMessages } = useAiMode();
   const [input, setInput] = useState('');
   const [scope, setScope] = useState<Scope>('meeting');
+  const [selectedMeetingId, setSelectedMeetingId] = useState<string | null>(null);
   const [showScopeMenu, setShowScopeMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scopeRef = useRef<HTMLDivElement>(null);
 
-  const selectedMeeting = meetings.find(m => m.id === currentMeeting?.id);
+  const selectedMeeting = meetings.find(m => m.id === (selectedMeetingId ?? currentMeeting?.id));
   const hasTranscripts = scope === 'all' ? meetings.length > 0 : !!selectedMeeting;
 
   // Close scope dropdown on outside click
@@ -44,7 +45,7 @@ export default function AiModePageContent() {
     const question = input.trim();
     setInput('');
     await askQuestion(
-      scope === 'all' ? '' : (currentMeeting?.id ?? ''),
+      scope === 'all' ? '' : (selectedMeetingId ?? currentMeeting?.id ?? ''),
       question,
       scope === 'all',
     );
@@ -103,14 +104,14 @@ export default function AiModePageContent() {
                       meetings.slice(0, 10).map(m => (
                         <button
                           key={m.id}
-                          onClick={() => { setScope('meeting'); setShowScopeMenu(false); }}
-                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 ${scope === 'meeting' && currentMeeting?.id === m.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}
+                          onClick={() => { setScope('meeting'); setSelectedMeetingId(m.id); setShowScopeMenu(false); }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 ${scope === 'meeting' && (selectedMeetingId ?? currentMeeting?.id) === m.id ? 'text-blue-600 font-medium' : 'text-gray-700'}`}
                         >
                           <div className="flex items-center justify-center w-5 h-5 rounded bg-gray-100">
                             <Bot className="w-3 h-3 text-gray-500" />
                           </div>
                           <span className="flex-1 truncate">{m.title}</span>
-                          {scope === 'meeting' && currentMeeting?.id === m.id && <Check className="w-3.5 h-3.5" />}
+                          {scope === 'meeting' && (selectedMeetingId ?? currentMeeting?.id) === m.id && <Check className="w-3.5 h-3.5" />}
                         </button>
                       ))
                     )}
