@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core"
 import Analytics from "@/lib/analytics"
 import AnalyticsConsentSwitch from "./AnalyticsConsentSwitch"
 import { useConfig, NotificationSettings } from "@/contexts/ConfigContext"
+import { CalendarSettings } from "./CalendarSettings"
 
 export function PreferenceSettings() {
   const {
@@ -219,6 +220,9 @@ export function PreferenceSettings() {
           </p>
         </div>
       </div>
+
+      {/* Google Calendar Section */}
+      <CalendarSettings />
 
       {/* Analytics Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">

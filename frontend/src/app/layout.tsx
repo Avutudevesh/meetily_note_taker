@@ -25,6 +25,7 @@ import { RecordingPostProcessingProvider } from '@/contexts/RecordingPostProcess
 import { ImportAudioDialog, ImportDropOverlay } from '@/components/ImportAudio'
 import { ImportDialogProvider } from '@/contexts/ImportDialogContext'
 import { isAudioExtension, getAudioFormatsDisplayList } from '@/constants/audioFormats'
+import { CalendarMeetingPopup } from '@/components/CalendarMeetingPopup'
 
 
 const sourceSans3 = Source_Sans_3({
@@ -76,6 +77,13 @@ export default function RootLayout({
   const [showImportDialog, setShowImportDialog] = useState(false)
   const [importFilePath, setImportFilePath] = useState<string | null>(null)
 
+  // Google Calendar meeting popup
+  const [calendarPopup, setCalendarPopup] = useState<{
+    open: boolean;
+    summary: string;
+    minutesUntil: number;
+  }>({ open: false, summary: '', minutesUntil: 0 })
+
   useEffect(() => {
     // Check onboarding status first
     invoke<{ completed: boolean } | null>('get_onboarding_status')
@@ -126,6 +134,23 @@ export default function RootLayout({
       unlisten.then(fn => fn());
     };
   }, [showOnboarding]);
+
+  // Listen for Google Calendar meeting reminders
+  useEffect(() => {
+    const unlisten = listen<{ id: string; summary: string; minutes_until: number }>(
+      'calendar-meeting-reminder',
+      (event) => {
+        setCalendarPopup({
+          open: true,
+          summary: event.payload.summary,
+          minutesUntil: event.payload.minutes_until,
+        });
+      }
+    );
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   // Handle file drop for audio import
   const handleFileDrop = useCallback((paths: string[]) => {
@@ -262,6 +287,13 @@ export default function RootLayout({
                                 showImportDialog={showImportDialog}
                                 handleImportDialogClose={handleImportDialogClose}
                                 importFilePath={importFilePath}
+                              />
+                              {/* Google Calendar meeting reminder popup */}
+                              <CalendarMeetingPopup
+                                open={calendarPopup.open}
+                                summary={calendarPopup.summary}
+                                minutesUntil={calendarPopup.minutesUntil}
+                                onClose={() => setCalendarPopup((p) => ({ ...p, open: false }))}
                               />
                             </ImportDialogProvider>
                           </RecordingPostProcessingProvider>

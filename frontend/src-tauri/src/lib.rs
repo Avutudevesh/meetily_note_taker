@@ -38,6 +38,7 @@ pub(crate) use perf_trace;
 pub mod analytics;
 pub mod api;
 pub mod audio;
+pub mod calendar;
 pub mod config;
 pub mod console_utils;
 pub mod database;
@@ -61,6 +62,7 @@ use notifications::commands::NotificationManagerState;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager, Runtime};
 use tokio::sync::RwLock;
+use calendar::CalendarState;
 
 static RECORDING_FLAG: AtomicBool = AtomicBool::new(false);
 
@@ -417,6 +419,7 @@ pub fn run() {
         )) as NotificationManagerState<tauri::Wry>)
         .manage(audio::init_system_audio_state())
         .manage(summary::summary_engine::ModelManagerState(Arc::new(tokio::sync::Mutex::new(None))))
+        .manage(Arc::new(CalendarState::new()))
         .setup(|_app| {
             log::info!("Application setup complete");
 
@@ -508,6 +511,23 @@ pub fn run() {
             } else {
                 log::warn!("Failed to resolve resource directory for templates");
             }
+
+            // Start Google Calendar poller if tokens already exist
+            let app_for_calendar = _app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                if let Some(app_state) = app_for_calendar.try_state::<crate::state::AppState>() {
+                    let pool = app_state.db_manager.pool();
+                    match calendar::repository::get_tokens(pool).await {
+                        Ok(Some(_)) => {
+                            let cal_state = app_for_calendar.state::<Arc<CalendarState>>();
+                            calendar::poller::spawn_poller(app_for_calendar.clone(), cal_state.inner().clone());
+                            log::info!("[Calendar] Poller started on app startup");
+                        }
+                        Ok(None) => log::info!("[Calendar] No tokens found, poller not started"),
+                        Err(e) => log::warn!("[Calendar] Failed to check tokens on startup: {}", e),
+                    }
+                }
+            });
 
             Ok(())
         })
@@ -752,6 +772,13 @@ pub fn run() {
             audio::import::start_import_audio_command,
             audio::import::cancel_import_command,
             audio::import::is_import_in_progress_command,
+            // Google Calendar integration commands
+            calendar::commands::calendar_save_credentials,
+            calendar::commands::calendar_connect,
+            calendar::commands::calendar_disconnect,
+            calendar::commands::calendar_get_status,
+            calendar::commands::calendar_set_reminder_minutes,
+            calendar::commands::calendar_get_reminder_minutes,
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
@@ -763,6 +790,15 @@ pub fn run() {
                 }
                 tauri::RunEvent::Exit => {
                     log::info!("Application exiting, cleaning up resources...");
+
+                    // Stop calendar poller
+                    if let Some(cal_state) = _app_handle.try_state::<Arc<CalendarState>>() {
+                        let mut lock = cal_state.poller_shutdown.lock().unwrap();
+                        if let Some(tx) = lock.take() {
+                            let _ = tx.send(());
+                        }
+                    }
+
                     tauri::async_runtime::block_on(async {
                         // Clean up database connection and checkpoint WAL
                         if let Some(app_state) = _app_handle.try_state::<state::AppState>() {
